@@ -1,0 +1,27 @@
+<VirtualHost *:80>
+	ServerName django.localhost
+	DocumentRoot /var/projects/env/blog/blog
+	<Directory /var/projects/env/blog/blog>
+		Require all granted
+		AllowOverride all
+		Options FollowSymlinks
+		<Files wsgi.py>
+			Require all granted
+		</Files>
+	</Directory>
+	<Directory /var/projects/env/blog/static>
+		Require all granted
+	</Directory>
+	<Directory /var/projects/env/blog/static/media>
+		Require all granted
+	</Directory>
+	Alias /static /var/projects/env/blog/static
+	Alias /img /var/projects/env/blog/static/img
+	Alias /media /var/projects/env/blog/static/media
+	WSGIDaemonProcess django.localhost python-path=/var/projects/env:/var/projects/env/lib/python3.6/site-packages python-home=/var/projects/env/blog
+	WSGIProcessGroup django.localhost
+	WSGIApplicationGroup %{GLOBAL}
+	WSGIScriptAlias / /var/projects/env/blog/blog/wsgi.py
+	ErrorLog /var/log/httpd/error.log
+	CustomLog /var/log/httpd/access.log combined
+</VirtualHost>
