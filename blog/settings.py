@@ -27,6 +27,8 @@ SECRET_KEY = 'ynh9ig-yit3%$+!rk$@!ju1_iy%5jmjbge4gt=h%$w&1b2(9o9'
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+#ALLOWED_HOSTS = ['192.168.184.133']
+#ALLOWED_HOSTS = ['djserver.localhost']
 
 
 # Application definition
