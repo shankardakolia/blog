@@ -59,3 +59,7 @@ pip install pymysql
 yum -y install mod_wsgi
 groupadd www
 vim /etc/group   #Add root and pache to the newly created group www:x:1000:root,apache
+
+MYSQL CONNECTION ERROR FROM APACHE
+==================================
+setsebool -P httpd_can_network_connect_db=1
