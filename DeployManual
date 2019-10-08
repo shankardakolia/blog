@@ -3,9 +3,8 @@ DEPLOY DJANGO ON APACHE PRODUCTION SERVER
 
 SETUP HOSTNAME AND NAME RESOLUTION
 ==================================
-hostnamectl set-hostname djserver.localhost
-vim /etc/hosts
-192.168.184.133	djserver.localhost djserver
+hostnamectl set-hostname djserver.localhost && vim /etc/hosts
+192.168.184.129	djserver.localhost djserver
 
 CONFIGURE LAMP SERVER
 =====================
