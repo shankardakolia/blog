@@ -1,0 +1,148 @@
+DEPLOY DJANGO ON APACHE PRODUCTION SERVER
+=========================================
+
+SETUP HOSTNAME AND NAME RESOLUTION
+==================================
+hostnamectl set-hostname djserver.localhost
+vim /etc/hosts
+192.168.184.133	djserver.localhost djserver
+
+CONFIGURE LAMP SERVER
+=====================
+dnf -y install php-mysqlnd php-fpm mariadb-server httpd && yum -y install php-* && yum install -y policycoreutils-python-utils
+firewall-cmd --add-port=8000/tcp --permanent --zone=public && firewall-cmd --add-port=3306/tcp --permanent --zone=public && firewall-cmd --permanent --zone=public --add-service=http && firewall-cmd --permanent --zone=public --add-service=https && firewall-cmd --reload
+systemctl start mariadb && systemctl start httpd && systemctl enable mariadb && systemctl enable httpd && mysql_secure_installation   #SETUP MYSQL ADMIN PASSWORD
+
+CREATE DATABASE AND USERS
+=========================
+mysql -u root -p
+
+CREATE USER 'registry'@'localhost' IDENTIFIED BY 'Admin@19741988';
+GRANT ALL PRIVILEGES ON * . * TO 'registry'@'localhost' with grant option;
+FLUSH PRIVILEGES;
+CREATE USER 'dev'@'localhost' IDENTIFIED BY 'Admin@19741988';
+GRANT ALL PRIVILEGES ON * . * TO 'dev'@'localhost' with grant option;
+FLUSH PRIVILEGES;
+CREATE DATABASE CMS;
+CREATE DATABASE ABC;
+FLUSH PRIVILEGES;
+
+CREATE PHP FILE TO TEST PHP
+===========================
+touch /var/www/html/info.php && echo "<?php phpinfo(); ?>" > /var/www/html/info.php && cat /var/www/html/info.php
+chown -R apache:apache /var/www/html/* && chcon -t httpd_sys_rw_content_t /var/www/html/ -R
+
+TEST APACHE AND PHP
+
+SETUP PHPMYADMIN
+================
+
+curl https://files.phpmyadmin.net/phpMyAdmin/4.9.1/phpMyAdmin-4.9.1-all-languages.zip --output phpmyadminpackage.zip && unzip phpmyadminpackage.zip
+mv phpMyAdmin-4.9.1-all-languages/  /usr/share/phpmyadmin && sudo mkdir -p /var/lib/phpmyadmin/tmp && sudo chown -R apache:apache /var/lib/phpmyadmin && sudo mkdir /etc/phpmyadmin/
+cp /usr/share/phpmyadmin/config.sample.inc.php  /usr/share/phpmyadmin/config.inc.php && vim /usr/share/phpmyadmin/config.inc.php
+
+$cfg['blowfish_secret'] = 'H2OxcGXxflSd8JwrwVlh6KW6s2rER63i';
+$cfg['TempDir'] = '/var/lib/phpmyadmin/tmp';
+
+
+vim /etc/httpd/conf.d/phpmyadmin.conf
+
+# Apache configuration for phpMyAdmin
+Alias /phpMyAdmin /usr/share/phpmyadmin/
+Alias /phpmyadmin /usr/share/phpmyadmin/
+ 
+<Directory /usr/share/phpmyadmin/>
+   AddDefaultCharset UTF-8
+ 
+   <IfModule mod_authz_core.c>
+     # Apache 2.4
+     Require all granted
+   </IfModule>
+   <IfModule !mod_authz_core.c>
+     # Apache 2.2
+     Order Deny,Allow
+     Deny from All
+     Allow from 127.0.0.1
+     Allow from ::1
+   </IfModule>
+</Directory>
+
+SELINUX
+=======
+semanage fcontext -a -t httpd_sys_content_t "/usr/share/phpmyadmin(/.*)?" && restorecon -Rv /usr/share/phpmyadmin
+
+Restart Apache
+==============
+apachectl configtest && systemctl restart httpd
+
+===================LAMP SERVER END============================================================
+
+DJANGO,PYTHON SETUP AND MOD WSGI 
+================================
+yum groupinstall -y "Development Tools" && dnf install -y python3 python3-pip python3-devel python3-virtualenv && yum -y install mod_wsgi
+
+CREATE VIRTUAL ENVIRONMENT AND activate
+=======================================
+groupadd www && vim /etc/group   #Add root and pache to the newly created group www:x:1000:root,apache
+mkdir /var/projects && semanage fcontext -a -t httpd_sys_content_t "/var/projects(/.*)?" && restorecon -Rv /var/projects
+cd /var/projects && python3.6 -m venv myenvironment && cd myenvironment/ && source bin/activate
+
+GIT CONFIG
+==========
+git config --global user.name "SHANKAR DAKOLIA" && git config --global user.email "shankardakolia@gmail.com" && ssh-keygen -t rsa -b 4096 -C "shankardakolia@gmail.com"
+cat /root/.ssh/id_rsa.pub
+
+# Add SSH key to github
+
+INSTALL APPS IN VIRTUAL ENVIRONMENT
+===================================
+pip install django
+pip install pymysql
+
+pip install -r requirements.txt
+
+CREATE APACHE CONF FILE
+=======================
+vim /etc/httpd/conf.d/djserver.conf
+
+<VirtualHost *:80>
+	ServerName djserver.localhost
+	DocumentRoot /var/projects/myenvironment/blog
+	<Directory /var/projects/myenvironment/blog/blog>
+		Require all granted
+		AllowOverride all
+		Options FollowSymlinks
+		<Files wsgi.py>
+			Require all granted
+		</Files>
+	</Directory>
+	<Directory /var/projects/myenvironment/blog/static>
+		Require all granted
+	</Directory>
+	<Directory /var/projects/myenvironment/blog/static/media>
+		Require all granted
+	</Directory>
+	Alias /static /var/projects/myenvironment/blog/static
+	Alias /img /var/projects/myenvironment/blog/static/img
+	Alias /media /var/projects/myenvironment/blog/static/media
+	WSGIDaemonProcess django.localhost python-path=/var/projects/myenvironment:/var/projects/myenvironment/lib/python3.6/site-packages
+	WSGIProcessGroup django.localhost
+	WSGIApplicationGroup %{GLOBAL}
+	WSGIScriptAlias / /var/projects/myenvironment/blog/blog/wsgi.py
+	ErrorLog /var/log/httpd/error.log
+	CustomLog /var/log/httpd/access.log combined
+</VirtualHost>
+
+Save and Exit
+
+MYSQL CONNECT ERROR WITH APACHE
+===============================
+setsebool -P httpd_can_network_connect_db=1
+
+COPY MODIFIED FILES FOR VIRTUAL ENVIRONMENT
+===========================================
+ yes | cp -rf /var/projects/myenvironment/blog/env_modified_files/* /var/projects/myenvironment/lib/python3.6/site-packages/django/db/backends/mysql/
+chown root.www -R /var/projects && chmod 775 -R /var/projects
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py collectstatic
