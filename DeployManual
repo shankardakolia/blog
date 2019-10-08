@@ -93,6 +93,10 @@ cat /root/.ssh/id_rsa.pub
 
 # Add SSH key to github
 
+CLONE PROJECT
+=============
+git clone git@github.com:shankardakolia/blog.git
+
 INSTALL APPS IN VIRTUAL ENVIRONMENT
 ===================================
 pip install django
