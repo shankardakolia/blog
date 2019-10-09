@@ -146,6 +146,6 @@ COPY MODIFIED FILES FOR VIRTUAL ENVIRONMENT
 ===========================================
  yes | cp -rf /var/projects/myenvironment/blog/env_modified_files/* /var/projects/myenvironment/lib/python3.6/site-packages/django/db/backends/mysql/
 chown root.www -R /var/projects && chmod 775 -R /var/projects
-python manage.py migrate
-python manage.py createsuperuser
+python manage.py migrate && python manage.py createsuperuser
 python manage.py collectstatic
+reboot
