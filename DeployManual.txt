@@ -3,14 +3,12 @@ DEPLOY DJANGO ON APACHE PRODUCTION SERVER
 
 SETUP HOSTNAME AND NAME RESOLUTION
 ==================================
-hostnamectl set-hostname djserver.localhost && vim /etc/hosts
-192.168.184.129	djserver.localhost djserver
+hostnamectl set-hostname djserver.localhost && echo "192.168.184.136 djserver.localhost djserver" >> /etc/hosts
 
 CONFIGURE LAMP SERVER
 =====================
 dnf -y install php-mysqlnd php-fpm mariadb-server httpd && yum -y install php-* && yum install -y policycoreutils-python-utils
-firewall-cmd --add-port=8000/tcp --permanent --zone=public && firewall-cmd --add-port=3306/tcp --permanent --zone=public && firewall-cmd --permanent --zone=public --add-service=http && firewall-cmd --permanent --zone=public --add-service=https && firewall-cmd --reload
-systemctl start mariadb && systemctl start httpd && systemctl enable mariadb && systemctl enable httpd && mysql_secure_installation   #SETUP MYSQL ADMIN PASSWORD
+firewall-cmd --add-port=8000/tcp --permanent --zone=public && firewall-cmd --add-port=3306/tcp --permanent --zone=public && firewall-cmd --permanent --zone=public --add-service=http && firewall-cmd --permanent --zone=public --add-service=https && firewall-cmd --reload && systemctl start mariadb && systemctl start httpd && systemctl enable mariadb && systemctl enable httpd && mysql_secure_installation   
 
 CREATE DATABASE AND USERS
 =========================
@@ -28,18 +26,13 @@ FLUSH PRIVILEGES;
 
 CREATE PHP FILE TO TEST PHP
 ===========================
-touch /var/www/html/info.php && echo "<?php phpinfo(); ?>" > /var/www/html/info.php && cat /var/www/html/info.php
-touch /var/www/html/index.html && echo "<h1>Welcome to Apache 2.4</h1>" > /var/www/html/index.html
-chown -R apache:apache /var/www/html/* && chcon -t httpd_sys_rw_content_t /var/www/html/ -R
+touch /var/www/html/info.php && echo "<?php phpinfo(); ?>" > /var/www/html/info.php && cat /var/www/html/info.php && touch /var/www/html/index.html && echo "<h1>Welcome to Apache 2.4</h1>" > /var/www/html/index.html && chown -R apache:apache /var/www/html/* && chcon -t httpd_sys_rw_content_t /var/www/html/ -R && apachectl configtest && systemctl restart httpd
 
 TEST APACHE AND PHP
 
 SETUP PHPMYADMIN
 ================
-
-curl https://files.phpmyadmin.net/phpMyAdmin/4.9.1/phpMyAdmin-4.9.1-all-languages.zip --output phpmyadminpackage.zip && unzip phpmyadminpackage.zip
-mv phpMyAdmin-4.9.1-all-languages/  /usr/share/phpmyadmin && sudo mkdir -p /var/lib/phpmyadmin/tmp && sudo chown -R apache:apache /var/lib/phpmyadmin && sudo mkdir /etc/phpmyadmin/
-cp /usr/share/phpmyadmin/config.sample.inc.php  /usr/share/phpmyadmin/config.inc.php && vim /usr/share/phpmyadmin/config.inc.php
+curl https://files.phpmyadmin.net/phpMyAdmin/4.9.1/phpMyAdmin-4.9.1-all-languages.zip --output phpmyadminpackage.zip && unzip phpmyadminpackage.zip && mv phpMyAdmin-4.9.1-all-languages/  /usr/share/phpmyadmin && sudo mkdir -p /var/lib/phpmyadmin/tmp && sudo chown -R apache:apache /var/lib/phpmyadmin && sudo mkdir /etc/phpmyadmin/ && cp /usr/share/phpmyadmin/config.sample.inc.php  /usr/share/phpmyadmin/config.inc.php && vim /usr/share/phpmyadmin/config.inc.php
 
 $cfg['blowfish_secret'] = 'H2OxcGXxflSd8JwrwVlh6KW6s2rER63i';
 $cfg['TempDir'] = '/var/lib/phpmyadmin/tmp';
@@ -69,23 +62,19 @@ Alias /phpmyadmin /usr/share/phpmyadmin/
 
 SELINUX
 =======
-semanage fcontext -a -t httpd_sys_content_t "/usr/share/phpmyadmin(/.*)?" && restorecon -Rv /usr/share/phpmyadmin
-
-Restart Apache
-==============
-apachectl configtest && systemctl restart httpd
+semanage fcontext -a -t httpd_sys_content_t "/usr/share/phpmyadmin(/.*)?" && restorecon -Rv /usr/share/phpmyadmin && apachectl configtest && systemctl restart httpd
 
 ===================LAMP SERVER END============================================================
 
 DJANGO,PYTHON SETUP AND MOD WSGI 
 ================================
-yum groupinstall -y "Development Tools" && dnf install -y python3 python3-pip python3-devel python3-virtualenv && yum -y install mod_wsgi
+yum groupinstall -y "Development Tools" && dnf install -y python3 python3-pip python3-devel python3-virtualenv && yum -y install mod_wsgi && groupadd www && vim /etc/group   
+#Add root and pache to the newly created group www:x:1000:root,apache
 
 CREATE VIRTUAL ENVIRONMENT AND activate
 =======================================
-groupadd www && vim /etc/group   #Add root and pache to the newly created group www:x:1000:root,apache
-mkdir /var/projects && semanage fcontext -a -t httpd_sys_content_t "/var/projects(/.*)?" && restorecon -Rv /var/projects
-cd /var/projects && python3.6 -m venv myenvironment && cd myenvironment/ && source bin/activate
+
+mkdir /var/projects && semanage fcontext -a -t httpd_sys_content_t "/var/projects(/.*)?" && restorecon -Rv /var/projects && cd /var/projects && python3.6 -m venv myenvironment && cd myenvironment/ && source bin/activate
 
 GIT CONFIG
 ==========
@@ -145,6 +134,5 @@ setsebool -P httpd_can_network_connect_db=1
 
 COPY MODIFIED FILES FOR VIRTUAL ENVIRONMENT
 ===========================================
-yes | cp -rf /var/projects/myenvironment/blog/env_modified_files/* /var/projects/myenvironment/lib/python3.6/site-packages/django/db/backends/mysql/
-cd /var/projects/myenvironment/blog && chown root.www -R /var/projects && chmod 775 -R /var/projects && python manage.py migrate && python manage.py createsuperuser
+yes | cp -rf /var/projects/myenvironment/blog/env_modified_files/* /var/projects/myenvironment/lib/python3.6/site-packages/django/db/backends/mysql/ && cd /var/projects/myenvironment/blog && chown root.www -R /var/projects && chmod 775 -R /var/projects && python manage.py migrate && python manage.py createsuperuser
 python manage.py collectstatic && reboot
