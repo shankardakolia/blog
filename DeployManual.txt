@@ -29,6 +29,7 @@ FLUSH PRIVILEGES;
 CREATE PHP FILE TO TEST PHP
 ===========================
 touch /var/www/html/info.php && echo "<?php phpinfo(); ?>" > /var/www/html/info.php && cat /var/www/html/info.php
+touch /var/www/html/index.html && echo "<h1>Welcome to Apache 2.4</h1>" > /var/www/html/index.html
 chown -R apache:apache /var/www/html/* && chcon -t httpd_sys_rw_content_t /var/www/html/ -R
 
 TEST APACHE AND PHP
