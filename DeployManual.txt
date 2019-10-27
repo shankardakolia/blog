@@ -31,7 +31,7 @@ TEST APACHE AND PHP
 
 SETUP PHPMYADMIN
 ================
-curl https://files.phpmyadmin.net/phpMyAdmin/4.9.1/phpMyAdmin-4.9.1-all-languages.zip --output phpmyadminpackage.zip && unzip phpmyadminpackage.zip && mv phpMyAdmin-4.9.1-all-languages/  /usr/share/phpmyadmin && sudo mkdir -p /var/lib/phpmyadmin/tmp && sudo chown -R apache:apache /var/lib/phpmyadmin && sudo mkdir /etc/phpmyadmin/ && cp /usr/share/phpmyadmin/config.sample.inc.php  /usr/share/phpmyadmin/config.inc.php && vim /usr/share/phpmyadmin/config.inc.php
+curl https://files.phpmyadmin.net/phpMyAdmin/4.9.1/phpMyAdmin-4.9.1-all-languages.zip --output phpmyadminpackage.zip && dnf -y install vim unzip && unzip phpmyadminpackage.zip && mv phpMyAdmin-4.9.1-all-languages/  /usr/share/phpmyadmin && sudo mkdir -p /var/lib/phpmyadmin/tmp && sudo chown -R apache:apache /var/lib/phpmyadmin && sudo mkdir /etc/phpmyadmin/ && cp /usr/share/phpmyadmin/config.sample.inc.php  /usr/share/phpmyadmin/config.inc.php && vim /usr/share/phpmyadmin/config.inc.php
 
 $cfg['blowfish_secret'] = 'H2OxcGXxflSd8JwrwVlh6KW6s2rER63i';
 $cfg['TempDir'] = '/var/lib/phpmyadmin/tmp';
