@@ -7,7 +7,7 @@ hostnamectl set-hostname djserver.localhost && echo "192.168.184.136 djserver.lo
 
 CONFIGURE LAMP SERVER
 =====================
-dnf -y install php-mysqlnd php-fpm mariadb-server httpd && yum -y install php-* && yum install -y policycoreutils-python-utils && firewall-cmd --add-port=8000/tcp --permanent --zone=public && firewall-cmd --add-port=3306/tcp --permanent --zone=public && firewall-cmd --permanent --zone=public --add-service=http && firewall-cmd --permanent --zone=public --add-service=https && firewall-cmd --reload && systemctl start mariadb && systemctl start httpd && systemctl enable mariadb && systemctl enable httpd && mysql_secure_installation   
+dnf -y install php-mysqlnd php-fpm mariadb-server httpd wget && yum -y install php-* && yum install -y policycoreutils-python-utils && firewall-cmd --add-port=8000/tcp --permanent --zone=public && firewall-cmd --add-port=3306/tcp --permanent --zone=public && firewall-cmd --permanent --zone=public --add-service=http && firewall-cmd --permanent --zone=public --add-service=https && firewall-cmd --reload && systemctl start mariadb && systemctl start httpd && systemctl enable mariadb && systemctl enable httpd && mysql_secure_installation   
 
 CREATE DATABASE AND USERS
 =========================
